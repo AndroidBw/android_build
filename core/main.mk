@@ -335,6 +335,15 @@ ifneq (,$(filter debug,$(tags_to_install)))
 endif
 endif
 
+## java coverage ##
+# Install additional tools on java coverage builds
+ifeq (true,$(EMMA_INSTRUMENT))
+ifneq (,$(filter debug,$(tags_to_install)))
+  tags_to_install += java_coverage
+endif
+endif
+
+
 ## sdk ##
 
 ifdef is_sdk_build
@@ -1094,6 +1103,7 @@ define product-installed-files
     $(if $(filter debug,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG)) \
     $(if $(filter tests,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_TESTS)) \
     $(if $(filter asan,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG_ASAN)) \
+    $(if $(filter java_coverage,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG_JAVA_COVERAGE)) \
     $(call auto-included-modules) \
   ) \
   $(eval ### Filter out the overridden packages and executables before doing expansion) \
@@ -1408,6 +1418,28 @@ modules_to_install := $(sort \
     $(call get-tagged-modules,$(tags_to_install)) \
     $(CUSTOM_MODULES) \
   )
+
+#
+# Used by the cleanup logic in soong_ui to remove files that should no longer
+# be installed.
+#
+
+# Include all tests, so that we remove them from the test suites / testcase
+# folders when they are removed.
+test_files := $(foreach ts,$(ALL_COMPATIBILITY_SUITES),$(COMPATIBILITY.$(ts).FILES))
+
+$(shell mkdir -p $(PRODUCT_OUT) $(HOST_OUT))
+
+$(file >$(PRODUCT_OUT)/.installable_files$(if $(filter address,$(SANITIZE_TARGET)),_asan), \
+  $(sort $(patsubst $(PRODUCT_OUT)/%,%,$(filter $(PRODUCT_OUT)/%, \
+    $(modules_to_install) $(test_files)))))
+
+$(file >$(HOST_OUT)/.installable_test_files,$(sort \
+  $(patsubst $(HOST_OUT)/%,%,$(filter $(HOST_OUT)/%, \
+    $(test_files)))))
+
+test_files :=
+
 
 # Don't include any GNU General Public License shared objects or static
 # libraries in SDK images.  GPL executables (not static/dynamic libraries)

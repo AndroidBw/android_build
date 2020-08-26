@@ -4280,7 +4280,7 @@ else
     OTA_SCRIPT_OVERRIDE_DEVICE := $(TARGET_OTA_ASSERT_DEVICE)
 endif
 
-ifeq ($(WITH_GMS),true)
+ifeq ($(TARGET_BUILD_VARIANT),user)
     $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := false
 else
 ifneq ($(LINEAGE_BUILD),)
@@ -4384,11 +4384,10 @@ $(SYMBOLS_ZIP): $(SOONG_ZIP)
 # -----------------------------------------------------------------
 # A zip of the coverage directory.
 #
-name := $(TARGET_PRODUCT)
+name := gcov-report-files-all
 ifeq ($(TARGET_BUILD_TYPE),debug)
 name := $(name)_debug
 endif
-name := $(name)-coverage-$(FILE_NAME_TAG)
 COVERAGE_ZIP := $(PRODUCT_OUT)/$(name).zip
 ifndef TARGET_BUILD_APPS
 $(COVERAGE_ZIP): $(INSTALLED_SYSTEMIMAGE_TARGET) \
